@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Festsetzungsverjährung</title>
+<meta name="theme-color" content="#E7EAEE">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --papier:#E7EAEE; --papier-tief:#DCE0E6; --tinte:#1A2430; --tinte-matt:#55616F;
+  --akzent:#1E5B4F; --richtig:#2C6B4B; --falsch:#94382C; --linie:#BFC6CF; --rand:1.5rem;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--papier);color:var(--tinte);
+  font-family:"Source Serif 4",Georgia,"Times New Roman",serif;
+  font-size:17px;line-height:1.55;font-variant-numeric:oldstyle-nums}
+.huelle{max-width:34rem;margin:0 auto;padding:var(--rand) var(--rand) 5rem}
+.kopf{padding-top:1.5rem}
+.marke{font-size:3.4rem;line-height:.8;font-weight:700;color:var(--akzent);display:block;margin-bottom:.6rem;letter-spacing:-.02em}
+h1{font-size:1.5rem;line-height:1.2;font-weight:700;margin:0 0 .35rem}
+.unterzeile{color:var(--tinte-matt);font-size:.95rem;margin:0}
+.regler{margin:1.6rem 0 0;border-top:1px solid var(--linie);padding-top:1rem}
+.reglerzeile{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.7rem}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+.chip{background:none;border:1px solid var(--linie);border-radius:999px;padding:.3rem .8rem;font-size:.88rem;color:var(--tinte-matt)}
+.chip[aria-pressed="true"]{border-color:var(--akzent);color:var(--akzent);font-weight:600}
+.chip:focus-visible,.knopf:focus-visible,.option:focus-visible{outline:2px solid var(--akzent);outline-offset:2px}
+.balken{height:2px;background:var(--papier-tief);margin:1.2rem 0 .5rem;position:relative}
+.balken span{position:absolute;inset:0 auto 0 0;background:var(--akzent);width:0%}
+.zaehler{display:flex;justify-content:space-between;font-size:.85rem;color:var(--tinte-matt);margin-bottom:1.8rem}
+.thema{color:var(--akzent);font-size:.9rem;font-weight:600;margin:0 0 .5rem}
+.frage{font-size:1.2rem;line-height:1.4;font-weight:600;margin:0 0 1.4rem}
+.optionen{list-style:none;margin:0;padding:0}
+.option{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--linie);
+  padding:.85rem 0 .85rem 2rem;position:relative;line-height:1.45}
+.optionen li:last-child .option{border-bottom:1px solid var(--linie)}
+.option .buchstabe{position:absolute;left:0;top:.85rem;color:var(--tinte-matt);font-weight:600}
+.option:hover:not(:disabled) .buchstabe{color:var(--akzent)}
+.option:disabled{cursor:default}
+.option.gewaehlt-richtig,.option.loesung{color:var(--richtig);font-weight:600}
+.option.gewaehlt-richtig .buchstabe,.option.loesung .buchstabe{color:var(--richtig)}
+.option.gewaehlt-falsch{color:var(--falsch);font-weight:600}
+.option.gewaehlt-falsch .buchstabe{color:var(--falsch)}
+.option.matt{color:var(--tinte-matt);opacity:.65}
+.aufloesung{margin:1.5rem 0 0;padding-left:1rem;border-left:3px solid var(--linie)}
+.aufloesung.ja{border-left-color:var(--richtig)}
+.aufloesung.nein{border-left-color:var(--falsch)}
+.urteil{font-weight:700;margin:0 0 .35rem}
+.aufloesung.ja .urteil{color:var(--richtig)}
+.aufloesung.nein .urteil{color:var(--falsch)}
+.abschnitt{margin:.9rem 0 0}
+.abschnitt h2{font-size:.82rem;font-weight:700;color:var(--tinte-matt);margin:0 0 .2rem;letter-spacing:.02em}
+.abschnitt p{margin:0}
+.leiste{display:flex;gap:.6rem;align-items:center;margin-top:1.8rem;flex-wrap:wrap}
+.knopf{background:var(--akzent);color:var(--papier);border:0;border-radius:2px;padding:.65rem 1.4rem;font-weight:600}
+.knopf.leer{background:none;color:var(--tinte-matt);border:1px solid var(--linie)}
+.hinweis{font-size:.82rem;color:var(--tinte-matt);margin-top:1.2rem}
+.quote{font-size:3rem;font-weight:700;color:var(--akzent);line-height:1;margin:.5rem 0}
+.bilanz{margin:.2rem 0 1.4rem;color:var(--tinte-matt)}
+.themenliste{list-style:none;padding:0;margin:1.4rem 0 0;font-size:.95rem}
+.themenliste li{display:flex;justify-content:space-between;border-top:1px solid var(--linie);padding:.5rem 0}
+.themenliste li:last-child{border-bottom:1px solid var(--linie)}
+.themenliste .wert{color:var(--tinte-matt)}
+.themenliste .schwach .wert{color:var(--falsch);font-weight:600}
+.verborgen{display:none}
+@media (prefers-reduced-motion:no-preference){.balken span{transition:width .25s ease}}
+@media (max-width:400px){
+  :root{--rand:1.1rem}
+  body{font-size:16px}
+  .marke{font-size:2.8rem}
+  h1{font-size:1.3rem}
+  .frage{font-size:1.1rem}
+}
+</style>
+</head>
+<body>
+<div class="huelle">
+  <header class="kopf">
+    <span class="marke" aria-hidden="true">§</span>
+    <h1>Festsetzungsverjährung</h1>
+    <p class="unterzeile" id="unterzeile">Fragen zu Teil 16 des Vorkurs-Skripts</p>
+  </header>
+
+  <section class="regler" id="regler" aria-label="Auswahl">
+    <div class="reglerzeile" id="modusZeile" role="group" aria-label="Modus"></div>
+    <div class="reglerzeile" id="themenZeile" role="group" aria-label="Themen"></div>
+    <div class="leiste">
+      <button class="knopf" id="starten">Runde starten</button>
+      <button class="knopf leer" id="zuruecksetzen">Fortschritt löschen</button>
+    </div>
+    <p class="hinweis" id="bestand"></p>
+  </section>
+
+  <main id="lauf" class="verborgen">
+    <div class="balken"><span id="balkenFuellung"></span></div>
+    <div class="zaehler"><span id="position"></span><span id="trefferstand"></span></div>
+    <p class="thema" id="thema"></p>
+    <p class="frage" id="frage"></p>
+    <ul class="optionen" id="optionen"></ul>
+    <div class="aufloesung verborgen" id="aufloesung" aria-live="polite">
+      <p class="urteil" id="urteil"></p>
+      <div class="abschnitt verborgen" id="warumBlock">
+        <h2>Warum deine Antwort nicht stimmt</h2>
+        <p id="warum"></p>
+      </div>
+      <div class="abschnitt verborgen" id="richtigBlock">
+        <h2>Richtig gewesen wäre</h2>
+        <p id="richtigText"></p>
+      </div>
+      <div class="abschnitt">
+        <h2>Hintergrund</h2>
+        <p id="erlaeuterung"></p>
+      </div>
+    </div>
+    <div class="leiste">
+      <button class="knopf verborgen" id="weiter">Weiter</button>
+      <button class="knopf leer" id="abbrechen">Runde beenden</button>
+    </div>
+    <p class="hinweis">Tasten 1 bis 4 wählen eine Antwort, Enter blättert weiter.</p>
+  </main>
+
+  <section id="ende" class="verborgen">
+    <p class="quote" id="quote"></p>
+    <p class="bilanz" id="bilanz"></p>
+    <ul class="themenliste" id="themenBilanz"></ul>
+    <div class="leiste">
+      <button class="knopf" id="nochmal">Neue Runde</button>
+      <button class="knopf leer" id="fehlerRunde">Nur die Fehler üben</button>
+    </div>
+  </section>
+</div>
+<script>
+const FRAGEN = [
+{t:"Grundlagen",q:"Was bewirkt der Ablauf der Festsetzungsfrist?",o:[
+{a:"Der Steuerbescheid wird nichtig",w:"Nichtigkeit setzt einen besonders schweren und offenkundigen Fehler voraus, § 125 Abs. 1 AO. Das Verjährungsrecht ist zu kompliziert, als dass ein Verstoß offenkundig wäre."},
+{a:"Der Steueranspruch erlischt, eine Festsetzung ist unzulässig",w:""},
+{a:"Die Beweislast kehrt sich um",w:"Die Verjährung betrifft die Zulässigkeit der Festsetzung, nicht die Verteilung der Feststellungslast."},
+{a:"Der Vorbehalt der Nachprüfung entfällt, der Bescheid bleibt änderbar",w:"Der Vorbehalt entfällt zwar nach § 164 Abs. 4 AO, aber gerade deshalb ist der Bescheid danach nicht mehr änderbar."}],c:1,
+e:"§ 169 Abs. 1 Satz 1 AO verbietet die Festsetzung nach Fristablauf, § 47 AO lässt den Anspruch erlöschen."},
+
+{t:"Grundlagen",q:"Ein Steuerbescheid ergeht nach Eintritt der Festsetzungsverjährung. Welche Folge hat das?",o:[
+{a:"Er ist nichtig und entfaltet keine Wirkung",w:"Der BFH verneint die Nichtigkeit ausdrücklich. Der Fehler ist nicht offenkundig im Sinne des § 125 Abs. 1 AO."},
+{a:"Er ist rechtswidrig, aber wirksam und sogar vollstreckbar",w:""},
+{a:"Er ist schwebend unwirksam bis zur Zustimmung des Steuerpflichtigen",w:"Eine schwebende Unwirksamkeit kennt das Steuerverfahrensrecht in dieser Form nicht."},
+{a:"Er wird automatisch aufgehoben",w:"Eine automatische Aufhebung gibt es nicht. Der Steuerpflichtige muss den Bescheid anfechten."}],c:1,
+e:"AEAO vor §§ 169 bis 171, Nr. 4: Solche Bescheide sind nur rechtswidrig. Der Steuerpflichtige muss also Einspruch einlegen."},
+
+{t:"Grundlagen",q:"Schließt die eingetretene Festsetzungsverjährung weitere Ermittlungen der Behörde aus?",o:[
+{a:"Ja, jede Ermittlungshandlung ist unzulässig",w:"Die Verjährung sperrt nur die Festsetzung, nicht die Sachaufklärung. Ermittlungen können etwa für andere Jahre oder für Straftatbestände bedeutsam sein."},
+{a:"Nein, Ermittlungen nach §§ 88, 92 ff., 193 ff. AO bleiben zulässig",w:""},
+{a:"Nur eine Außenprüfung bleibt zulässig",w:"Es gibt keine solche Beschränkung auf die Außenprüfung; alle Ermittlungsbefugnisse bleiben bestehen."},
+{a:"Nur mit Zustimmung des Steuerpflichtigen",w:"Ermittlungsbefugnisse hängen nicht von einer Zustimmung ab."}],c:1,
+e:"Die Festsetzungsverjährung betrifft allein die Festsetzung, nicht die Ermittlungsbefugnisse der Finanzbehörde."},
+
+{t:"Beginn § 170",q:"Welche Vorschrift enthält die Grundregel für den Beginn der Festsetzungsfrist?",o:[
+{a:"§ 169 Abs. 2 AO",w:"Diese Norm regelt die Dauer der Frist, nicht ihren Beginn."},
+{a:"§ 170 Abs. 1 AO",w:""},
+{a:"§ 171 Abs. 1 AO",w:"§ 171 AO regelt durchgehend Ablaufhemmungen, also das Fristende."},
+{a:"§ 38 AO",w:"§ 38 AO regelt die Entstehung des Steueranspruchs, nicht den Fristbeginn."}],c:1,
+e:"§ 170 Abs. 1 AO: Beginn mit Ablauf des Kalenderjahres, in dem der Anspruch entstanden ist. Für die Feststellungsverjährung gilt über § 181 Abs. 1 Satz 1 AO dasselbe."},
+
+{t:"Beginn § 170",q:"In welchen Fällen ist § 170 Abs. 1 AO praktisch anwendbar?",o:[
+{a:"Bei allen Einkommensteuerveranlagungen",w:"Bei der Pflichtveranlagung greift die Anlaufhemmung des § 170 Abs. 2 Satz 1 Nr. 1 AO und verdrängt die Grundregel."},
+{a:"Bei Vorauszahlungsbescheiden, Zöllen, Verbrauchsteuern und Antragsveranlagungen",w:""},
+{a:"Nur bei der Umsatzsteuer",w:"Für die Umsatzsteuer besteht nach § 18 UStG eine Erklärungspflicht, also greift die Anlaufhemmung."},
+{a:"Nur bei Feststellungsbescheiden",w:"Auch dort gilt über § 181 Abs. 1 Satz 1 AO regelmäßig die Anlaufhemmung."}],c:1,
+e:"Durch die Anlaufhemmung wird die Grundregel in klausurrelevanten Fällen faktisch zur Ausnahme."},
+
+{t:"Beginn § 170",q:"Was regelt die erste Alternative des § 170 Abs. 2 Satz 1 Nr. 1 AO?",o:[
+{a:"Beginn mit Ablauf des Jahres der Steuerentstehung",w:"Das ist die Grundregel des § 170 Abs. 1 AO, nicht die Anlaufhemmung."},
+{a:"Beginn mit Ablauf des Jahres, in dem die Erklärung eingeht",w:""},
+{a:"Beginn mit Ablauf des dritten Jahres nach Entstehung",w:"Das ist die zweite Alternative, die maximale Anlaufhemmung, und greift nur, wenn keine oder eine sehr späte Erklärung eingeht."},
+{a:"Beginn mit Bekanntgabe des Bescheids",w:"Die Bekanntgabe ist für den Fristbeginn ohne Bedeutung."}],c:1,
+e:"Erste Alternative: Jahr des Erklärungseingangs. Zweite Alternative: spätestens drittes Jahr nach Entstehung."},
+
+{t:"Beginn § 170",q:"Wozu dient die maximale Anlaufhemmung von drei Jahren?",o:[
+{a:"Sie soll dem Steuerpflichtigen mehr Zeit zur Abgabe geben",w:"Die Norm begünstigt den Steuerpflichtigen gerade nicht; sie beendet sein Hinauszögern."},
+{a:"Sie verhindert, dass die Bearbeitungszeit des Finanzamts durch späte Abgabe verkürzt wird",w:""},
+{a:"Sie verlängert die Festsetzungsfrist pauschal um drei Jahre",w:"Sie verlängert nichts pauschal, sondern begrenzt die Verschiebung des Fristbeginns nach oben."},
+{a:"Sie ersetzt die Erklärungspflicht",w:"Die Erklärungspflicht aus § 149 AO bleibt davon unberührt."}],c:1,
+e:"Ohne die Grenze könnte ein Steuerpflichtiger den Fristbeginn durch Nichtabgabe unbegrenzt hinausschieben."},
+
+{t:"Beginn § 170",q:"Die ESt 2022 entsteht am 31.12.2022. Die Pflichterklärung geht 2026 ein. Wann beginnt die Festsetzungsfrist?",o:[
+{a:"31.12.2026",w:"Die erste Alternative greift nicht mehr, weil die maximale Anlaufhemmung vorher eingreift. Nach dem dritten Jahr startet die Frist unabhängig von der Abgabe."},
+{a:"31.12.2025",w:""},
+{a:"31.12.2022",w:"Die Grundregel des § 170 Abs. 1 AO wird durch die Anlaufhemmung verdrängt, weil eine Erklärungspflicht besteht."},
+{a:"31.12.2023",w:"Ein Fristbeginn 2023 käme nur in Betracht, wenn die Erklärung 2023 eingegangen wäre."}],c:1,
+e:"Drittes Kalenderjahr nach dem Entstehungsjahr 2022 ist 2025. Eine spätere Abgabe ändert am Fristbeginn nichts mehr."},
+
+{t:"Beginn § 170",q:"Greift die Anlaufhemmung bei einer Antragsveranlagung nach § 46 Abs. 2 Nr. 8 EStG?",o:[
+{a:"Ja, wie bei jeder Einkommensteuerveranlagung",w:"Die Anlaufhemmung setzt eine Erklärungspflicht voraus. Bei der Antragsveranlagung besteht keine."},
+{a:"Nein, es fehlt an einer Erklärungspflicht",w:""},
+{a:"Nur wenn das Finanzamt zur Abgabe auffordert",w:"Das trifft zwar den Sonderfall der behördlichen Aufforderung, beantwortet die Frage nach dem Regelfall aber falsch."},
+{a:"Nur bei Arbeitnehmern",w:"Die Abgrenzung verläuft nicht nach Berufsgruppen, sondern nach dem Bestehen einer Erklärungspflicht."}],c:1,
+e:"§ 56 EStDV sieht für die Antragsveranlagung keine Erklärungspflicht vor. Es bleibt bei § 170 Abs. 1 AO."},
+
+{t:"Beginn § 170",q:"Woraus kann sich eine Erklärungspflicht ergeben?",o:[
+{a:"Nur unmittelbar aus dem Gesetz",w:"Daneben gibt es die behördliche Erklärungspflicht aufgrund einer Aufforderung."},
+{a:"Aus dem Gesetz oder aus einer behördlichen Aufforderung nach § 149 Abs. 1 Satz 2 AO",w:""},
+{a:"Nur aus einer behördlichen Aufforderung",w:"Die gesetzliche Erklärungspflicht etwa aus § 56 EStDV oder § 18 UStG besteht unabhängig von jeder Aufforderung."},
+{a:"Aus dem Steuerbescheid des Vorjahres",w:"Ein Steuerbescheid begründet keine Erklärungspflicht für Folgejahre."}],c:1,
+e:"Gesetzliche Pflichten folgen etwa aus § 149 Abs. 1 Satz 1 AO mit § 25 Abs. 3 EStG und § 56 EStDV. Die behördliche Aufforderung ist ein eigenständiger Steuerverwaltungsakt."},
+
+{t:"Beginn § 170",q:"Die Pflichterklärung wird erst nach Ablauf der Festsetzungsfrist abgegeben. Welche Wirkung hat sie auf die Anlaufhemmung?",o:[
+{a:"Sie löst die Anlaufhemmung nachträglich aus",w:"Eine bereits eingetretene Verjährung kann nicht rückwirkend beseitigt werden."},
+{a:"Sie entfaltet keine anlaufhemmende Wirkung mehr",w:""},
+{a:"Sie verlängert die Frist um ein Jahr",w:"Eine solche Verlängerung sieht das Gesetz nicht vor."},
+{a:"Sie führt zur Nichtigkeit des Schätzungsbescheids",w:"Mit der Nichtigkeit hat die Frage nichts zu tun."}],c:1,
+e:"BFH vom 28.03.2012, VI R 68/10: Eine nach Fristablauf abgegebene Erklärung wirkt nicht mehr anlaufhemmend."},
+
+{t:"Beginn § 170",q:"Für welche Fälle gilt die Anlaufhemmung des § 170 Abs. 3 AO?",o:[
+{a:"Für die erstmalige Festsetzung bei Antragsveranlagung",w:"Genau das ist ausgeschlossen. Die Norm erfasst ausdrücklich nur Korrekturen."},
+{a:"Für die Korrektur einer antragsbedingten Festsetzung",w:""},
+{a:"Für alle Pflichtveranlagungen",w:"Bei Pflichtveranlagungen greift bereits § 170 Abs. 2 Satz 1 Nr. 1 AO."},
+{a:"Für Feststellungsbescheide",w:"Für die Feststellungsverjährung gelten die allgemeinen Regeln über § 181 Abs. 1 Satz 1 AO."}],c:1,
+e:"Ohne § 170 Abs. 3 AO bliebe dem Finanzamt bei Antragsveranlagungen kaum Zeit für eine spätere Korrektur. Die Frist beginnt mit Ablauf des Jahres des Antragseingangs."},
+
+{t:"Beginn § 170",q:"Beendet eine Nichtveranlagungs-Bescheinigung die Anlaufhemmung?",o:[
+{a:"Ja, sie ersetzt die Erklärung",w:"Eine solche Ersetzungswirkung hat die Bescheinigung nicht; sie betrifft nur den Kapitalertragsteuerabzug."},
+{a:"Nein, die Anlaufhemmung läuft weiter",w:""},
+{a:"Nur bei Kapitaleinkünften",w:"Auch dort beendet sie die Anlaufhemmung nicht."},
+{a:"Nur mit Zustimmung des Finanzamts",w:"Auf eine Zustimmung kommt es nicht an; die Rechtslage ist eindeutig."}],c:1,
+e:"BFH vom 15.05.2013, VI R 33/12: Die Erteilung einer Nichtveranlagungs-Bescheinigung beendet die Anlaufhemmung nach § 170 Abs. 2 Satz 1 Nr. 1 AO nicht."},
+
+{t:"Dauer § 169",q:"Wie lang ist die reguläre Festsetzungsfrist bei Besitz- und Verkehrsteuern?",o:[
+{a:"Ein Jahr",w:"Ein Jahr gilt nur für Verbrauchsteuern und Verbrauchsteuervergütungen, § 169 Abs. 2 Satz 1 Nr. 1 AO."},
+{a:"Vier Jahre",w:""},
+{a:"Fünf Jahre",w:"Fünf Jahre gelten nur bei leichtfertiger Steuerverkürzung, § 169 Abs. 2 Satz 2 AO."},
+{a:"Zehn Jahre",w:"Zehn Jahre gelten nur bei Steuerhinterziehung, § 169 Abs. 2 Satz 2 AO."}],c:1,
+e:"§ 169 Abs. 2 Satz 1 Nr. 2 AO ist der Regelfall für Einkommen-, Körperschaft-, Umsatz- und Gewerbesteuer."},
+
+{t:"Dauer § 169",q:"Setzt die zehnjährige Frist eine strafrechtliche Verurteilung voraus?",o:[
+{a:"Ja, ohne Verurteilung bleibt es bei vier Jahren",w:"Die Finanzbehörde prüft den objektiven und subjektiven Tatbestand eigenständig; eine Verurteilung ist nicht erforderlich."},
+{a:"Nein, die Voraussetzungen werden eigenständig geprüft",w:""},
+{a:"Nur bei Beträgen über 50.000 Euro",w:"Eine solche Wertgrenze kennt § 169 Abs. 2 Satz 2 AO nicht."},
+{a:"Nur wenn ein Steuerstrafverfahren eingeleitet wurde",w:"Die Einleitung eines Strafverfahrens ist keine Voraussetzung für die verlängerte Festsetzungsfrist."}],c:1,
+e:"Die verlängerte Frist knüpft an das Vorliegen der Hinterziehung an, nicht an ihre strafrechtliche Ahndung."},
+
+{t:"Fristwahrung",q:"Wann ist die Festsetzungsfrist nach § 169 Abs. 1 Satz 3 AO gewahrt?",o:[
+{a:"Wenn der Bescheid dem Steuerpflichtigen zugegangen ist",w:"Gerade auf den Zugang kommt es nicht an. Sonst trüge die Behörde das Risiko des Postlaufs."},
+{a:"Wenn der Bescheid vor Fristablauf den Bereich der Behörde verlassen hat",w:""},
+{a:"Wenn der Bescheid vor Fristablauf unterschrieben wurde",w:"Die interne Zeichnung genügt nicht; der Bescheid muss den Bereich der Behörde verlassen haben."},
+{a:"Wenn der Bescheid bestandskräftig geworden ist",w:"Die Bestandskraft tritt erst nach Ablauf der Einspruchsfrist ein und ist für die Fristwahrung ohne Bedeutung."}],c:1,
+e:"§ 169 Abs. 1 Satz 3 Nr. 1 AO stellt auf das Verlassen des Bereichs der Behörde ab, sofern der Bescheid dem Empfänger zugeht."},
+{t:"Ablaufhemmung",q:"Was ist das gemeinsame Prinzip aller Ablaufhemmungstatbestände?",o:[
+{a:"Der Fristbeginn wird nach hinten verschoben",w:"Das ist die Anlaufhemmung des § 170 AO. Die Ablaufhemmung betrifft das Fristende."},
+{a:"Das reguläre Fristende wird in die Zukunft hinausgeschoben",w:""},
+{a:"Die Frist beginnt vollständig neu zu laufen",w:"Ein Neubeginn wie bei der Zahlungsverjährung nach § 231 AO ist der Festsetzungsverjährung fremd."},
+{a:"Die Frist wird für die Dauer des Hindernisses angehalten",w:"Das klingt plausibel, trifft aber nur teilweise. Das Gesetz hängt in der Regel einen festen Zeitraum an das Ende an."}],c:1,
+e:"Dabei wird das Prinzip der Kalenderverjährung durchbrochen: Das gehemmte Fristende liegt meist nicht auf einem 31.12."},
+
+{t:"Ablaufhemmung",q:"In welcher Reihenfolge prüfst du die Verjährung in der Klausur?",o:[
+{a:"Erst die Ablaufhemmung, dann Beginn und Dauer",w:"Die Ablaufhemmung setzt ein reguläres Fristende voraus. Ohne dieses kannst du sie gar nicht berechnen."},
+{a:"Beginn, Dauer, reguläres Ende, dann Ablaufhemmung, dann Rechtsfolgen",w:""},
+{a:"Nur das Ergebnis nennen, die Rechnung ist unerheblich",w:"Der Korrektor vergibt die Punkte für die einzelnen Schritte, nicht für das Ergebnis allein."},
+{a:"Beginn, Ablaufhemmung, Dauer",w:"Die Dauer gehört unmittelbar hinter den Beginn, sonst lässt sich das reguläre Ende nicht bestimmen."}],c:1,
+e:"Klausurtipp aus dem Skript: Jede Ablaufhemmung anschließend nach dem Dreischritt Voraussetzungen, zeitlicher Umfang, sachlicher Umfang prüfen."},
+
+{t:"Ablaufhemmung",q:"Welchen Zeitraum erfasst § 171 Abs. 1 AO bei höherer Gewalt?",o:[
+{a:"Den gesamten Zeitraum der Verhinderung",w:"Erfasst wird nur der Teil der Verhinderung, der in die letzten sechs Monate der Frist fällt."},
+{a:"Die Verhinderung innerhalb der letzten sechs Monate vor Fristablauf",w:""},
+{a:"Pauschal ein Jahr",w:"§ 171 Abs. 1 AO hängt keinen festen Zeitraum an, sondern genau die Dauer der Verhinderung."},
+{a:"Die Verhinderung im letzten Monat vor Fristablauf",w:"Der maßgebliche Zeitraum beträgt sechs Monate, nicht einen Monat."}],c:1,
+e:"Skriptbeispiel: Schließung vom 15.06. bis 18.07.2024 bei Fristende 31.12.2024. Angehängt wird nur die Zeit ab 01.07., also bis zum 18.01.2025 — und wegen § 108 Abs. 3 AO bis zum 20.01.2025."},
+
+{t:"Ablaufhemmung",q:"Woran knüpft die Jahresfrist des § 171 Abs. 2 Satz 1 AO an?",o:[
+{a:"An die Kenntnis des Finanzamts vom Fehler",w:"Auf die Kenntnis kommt es nicht an, sondern auf die Bekanntgabe des fehlerhaften Bescheids."},
+{a:"An die Bekanntgabe des Bescheids, der die offenbare Unrichtigkeit enthält",w:""},
+{a:"An die Unanfechtbarkeit des Bescheids",w:"Die Unanfechtbarkeit ist für § 171 Abs. 2 AO ohne Bedeutung."},
+{a:"An den Ablauf der regulären Festsetzungsfrist",w:"Die Hemmung wird an die Bekanntgabe geknüpft, nicht an das reguläre Fristende."}],c:1,
+e:"Skriptbeispiel: Bekanntgabe am 10.10.2025 bei Fristende Ende 2025, Berichtigung nach § 129 AO möglich bis 10.10.2026."},
+
+{t:"Ablaufhemmung",q:"Ein Änderungsbescheid im letzten Jahr der Frist schleppt eine offenbare Unrichtigkeit aus einem früheren Bescheid unverändert weiter. Greift § 171 Abs. 2 AO erneut?",o:[
+{a:"Ja, jede Bekanntgabe löst eine neue Jahresfrist aus",w:"Sonst könnte die Behörde die Frist durch bloße Folgebescheide beliebig verlängern."},
+{a:"Nein, die Jahresfrist knüpft an den Bescheid an, der den Fehler erstmals enthielt",w:""},
+{a:"Ja, aber nur bei Änderungen zugunsten des Steuerpflichtigen",w:"Eine solche Richtungsunterscheidung enthält § 171 Abs. 2 AO nicht."},
+{a:"Nur wenn der Steuerpflichtige zustimmt",w:"Eine Zustimmung spielt für Ablaufhemmungen keine Rolle."}],c:1,
+e:"BFH vom 08.03.1989, X R 116/87: Maßgeblich ist der Erstbescheid mit dem Fehler."},
+
+{t:"Ablaufhemmung",q:"Welchen Zweck hat § 171 Abs. 2 Satz 2 AO?",o:[
+{a:"Er sichert die Berichtigung nach § 129 AO",w:"Das ist Satz 1. Satz 2 betrifft die Fehler des Steuerpflichtigen."},
+{a:"Er sichert die Korrektur nach § 173a AO",w:""},
+{a:"Er verlängert die Frist nach einer Außenprüfung",w:"Das ist § 171 Abs. 4 AO."},
+{a:"Er betrifft Grundlagenbescheide",w:"Grundlagenbescheide sind Gegenstand des § 171 Abs. 10 AO."}],c:1,
+e:"Auch für Schreib- und Rechenfehler des Steuerpflichtigen soll dem Finanzamt ein Jahr ab Bekanntgabe für die Korrektur bleiben."},
+
+{t:"Ablaufhemmung",q:"Löst die Abgabe einer gesetzlich vorgeschriebenen Steuererklärung eine Ablaufhemmung nach § 171 Abs. 3 AO aus?",o:[
+{a:"Ja, sie ist ein Antrag auf Festsetzung",w:"Die Erfüllung einer gesetzlichen Pflicht ist kein Antrag. So ausdrücklich AEAO zu § 171, Nr. 2."},
+{a:"Nein, die Erfüllung einer Erklärungspflicht ist kein Antrag",w:""},
+{a:"Ja, wenn damit ein Erstattungsanspruch geltend gemacht wird",w:"Der BFH verneint das auch für die Umsatzsteuererklärung mit Überschussanspruch."},
+{a:"Nur bei Feststellungserklärungen",w:"BFH vom 15.05.2013, IX R 5/11: Auch die Feststellungserklärung ist kein Antrag im Sinne des § 171 Abs. 3 AO."}],c:1,
+e:"§ 171 Abs. 3 AO will verhindern, dass sich Anträge durch Nichtstun der Behörde erledigen. Pflichterklärungen fallen nicht darunter."},
+
+{t:"Ablaufhemmung",q:"Wie weit reicht die Ablaufhemmung nach § 171 Abs. 3 AO sachlich?",o:[
+{a:"Auf den gesamten Steueranspruch",w:"Das gilt für § 171 Abs. 3a Satz 2 AO. Bei Abs. 3 ist der Umfang auf den Antrag begrenzt."},
+{a:"Nur soweit der Antrag reicht, und nur für den Antragsteller",w:""},
+{a:"Auf alle Veranlagungszeiträume des Steuerpflichtigen",w:"Die Hemmung wirkt nur für den Zeitraum, auf den sich der Antrag bezieht."},
+{a:"Auf alle Beteiligten eines Feststellungsverfahrens",w:"Die Wirkung ist auf den Antragsteller beschränkt."}],c:1,
+e:"Zeitlich bis zur unanfechtbaren Entscheidung über den Antrag, sachlich entsprechend seiner steuerlichen Auswirkung."},
+
+{t:"Ablaufhemmung",q:"Hat die Einreichung der Steuererklärung beim örtlich unzuständigen Finanzamt fristwahrende Wirkung?",o:[
+{a:"Ja, die Behörde muss intern weiterleiten",w:"Eine interne Weiterleitung ändert nichts am maßgeblichen Zugangszeitpunkt beim zuständigen Amt."},
+{a:"Nein, der Eingang muss beim örtlich zuständigen Finanzamt erfolgen",w:""},
+{a:"Ja, wenn die Weiterleitung innerhalb eines Monats erfolgt",w:"Eine solche Monatsregel gibt es nicht."},
+{a:"Nur bei Antragsveranlagungen",w:"Gerade für die Antragsveranlagung nach § 46 Abs. 2 Nr. 8 EStG hat der BFH das Gegenteil entschieden."}],c:1,
+e:"BFH vom 13.02.2020, VI R 37/17: Der Ablauf wird nur gehemmt, wenn die Erklärung beim örtlich zuständigen Finanzamt eingeht."},
+
+{t:"Ablaufhemmung",q:"Was setzt § 171 Abs. 3a AO voraus?",o:[
+{a:"Eine Außenprüfung",w:"Die Außenprüfung ist Gegenstand des § 171 Abs. 4 AO."},
+{a:"Einen Einspruch oder eine Klage gegen eine Steuerfestsetzung",w:""},
+{a:"Einen formlosen Änderungsantrag",w:"Der formlose Antrag fällt unter § 171 Abs. 3 AO, nicht unter Abs. 3a."},
+{a:"Einen Grundlagenbescheid",w:"Grundlagenbescheide sind Gegenstand des § 171 Abs. 10 AO."}],c:1,
+e:"Der Rechtsbehelf muss vor Eintritt der Verjährung eingelegt sein oder — nach Eintritt — innerhalb der Einspruchs- oder Klagefrist."},
+
+{t:"Ablaufhemmung",q:"Wie weit reicht § 171 Abs. 3a AO sachlich, wenn der Einspruch sich nur auf einen Teilbetrag bezieht?",o:[
+{a:"Nur auf den angegriffenen Teilbetrag",w:"Genau das hat der Gesetzgeber mit Satz 2 geändert, um die frühere Rechtsprechung auszuhebeln."},
+{a:"Auf den gesamten angegriffenen Verwaltungsakt",w:""},
+{a:"Auf alle Veranlagungszeiträume",w:"Die Hemmung erfasst nur den angegriffenen Verwaltungsakt, nicht andere Jahre."},
+{a:"Nur soweit die Einspruchsbegründung reicht",w:"Das war die frühere Rechtslage. Satz 2 stellt heute auf den gesamten Verwaltungsakt ab."}],c:1,
+e:"Folge: Eine Verböserung nach § 367 Abs. 2 Satz 2 AO ist von der Ablaufhemmung gedeckt."},
+
+{t:"Ablaufhemmung",q:"Was gilt für einen unzulässigen Einspruch im Rahmen des § 171 Abs. 3a AO?",o:[
+{a:"Er löst keinerlei Hemmung aus",w:"Eine Hemmung tritt ein, sie erlaubt der Behörde aber nur eine bestimmte Entscheidung."},
+{a:"Die Hemmung erlaubt nur die Verwerfung nach § 358 AO",w:""},
+{a:"Er hemmt wie ein zulässiger Einspruch in vollem Umfang",w:"Ein unzulässiger Einspruch eröffnet keine Sachentscheidung und damit auch keine Verböserung."},
+{a:"Er führt zum Neubeginn der Festsetzungsfrist",w:"Einen Neubeginn kennt die Festsetzungsverjährung nicht."}],c:1,
+e:"Der unzulässige Einspruch verschafft der Behörde keine Möglichkeit, den Fall inhaltlich neu aufzurollen."},
+
+{t:"Ablaufhemmung",q:"Wann endet die Ablaufhemmung nach § 171 Abs. 4 AO im Grundsatz?",o:[
+{a:"Mit Beendigung der Schlussbesprechung",w:"Die Schlussbesprechung beendet die Prüfung, nicht die Hemmung."},
+{a:"Wenn die aufgrund der Außenprüfung ergangenen Bescheide unanfechtbar geworden sind",w:""},
+{a:"Zwei Jahre nach Prüfungsbeginn",w:"Eine Zweijahresfrist enthält § 171 Abs. 4 AO nicht."},
+{a:"Mit Übersendung des Prüfungsberichts",w:"Auch der Bericht beendet die Hemmung nicht."}],c:1,
+e:"Die Außenprüfung ist Rechtsgrund der Hemmung; ihre Ergebnisse sollen gesichert werden, bis die Bescheide unanfechtbar sind."},
+
+{t:"Ablaufhemmung",q:"Welchen Zweck hat § 171 Abs. 4 Satz 3 AO?",o:[
+{a:"Er verlängert die Prüfungsdauer",w:"Die Norm begrenzt gerade, sie verlängert nicht."},
+{a:"Er begrenzt die Auswertungszeit des Finanzamts nach Prüfungsende",w:""},
+{a:"Er regelt die Zuständigkeit des Prüfers",w:"Zuständigkeitsfragen regelt § 195 AO."},
+{a:"Er bestimmt den sachlichen Umfang der Prüfung",w:"Der sachliche Umfang folgt aus der Prüfungsanordnung nach § 196 AO."}],c:1,
+e:"Die Bescheide müssen innerhalb einer Auswertungsfrist von vier, bei Verkürzung oder Hinterziehung fünf oder zehn Jahren nach Prüfungsende ergehen."},
+
+{t:"Ablaufhemmung",q:"Wonach bestimmt sich der sachliche Umfang der Ablaufhemmung nach § 171 Abs. 4 AO?",o:[
+{a:"Nach dem, was der Prüfer tatsächlich entdeckt hat",w:"Eine stichprobenweise Prüfung genügt; auch nicht entdeckte Fehler innerhalb des Prüfungsgegenstands sind erfasst."},
+{a:"Nach dem Inhalt der Prüfungsanordnung und dem tatsächlich Geprüften",w:""},
+{a:"Nach dem gesamten Steueranspruch des Steuerpflichtigen",w:"Die Hemmung reicht nicht weiter als die Prüfungsanordnung."},
+{a:"Nach dem Antrag des Steuerpflichtigen",w:"Ein Antrag spielt bei § 171 Abs. 4 AO keine Rolle."}],c:1,
+e:"AEAO zu § 171, Nr. 3.2.2. Die Hemmung wirkt außerdem nur gegenüber dem Adressaten der Prüfungsanordnung, nicht gegenüber Dritten."},
+
+{t:"Ablaufhemmung",q:"Beim Arbeitgeber findet eine Lohnsteuer-Außenprüfung statt. Wirkt die Ablaufhemmung auch gegenüber dem Arbeitnehmer?",o:[
+{a:"Ja, der Arbeitnehmer ist Beteiligter",w:"Die Hemmung wirkt nur gegenüber dem Adressaten der Prüfungsanordnung."},
+{a:"Nein, sie wirkt nur gegenüber dem Adressaten der Prüfungsanordnung",w:""},
+{a:"Ja, soweit seine Lohnsteuer betroffen ist",w:"Auch insoweit nicht; entscheidend ist allein, gegen wen sich die Prüfungsanordnung richtet."},
+{a:"Nur bei Nettolohnvereinbarungen",w:"Die Art der Lohnvereinbarung ändert an der personellen Reichweite nichts."}],c:1,
+e:"Die Prüfungsanordnung nach § 196 AO bestimmt sowohl den sachlichen als auch den persönlichen Umfang der Hemmung."},
+
+{t:"Ablaufhemmung",q:"Woran knüpft der Beginn der Frist des § 171 Abs. 8 AO an?",o:[
+{a:"An den Wegfall der Ungewissheit",w:"Nicht der objektive Wegfall zählt, sondern die positive Kenntnis der Behörde davon."},
+{a:"An die positive Kenntnis der Finanzbehörde vom Wegfall der Ungewissheit",w:""},
+{a:"An die Bekanntgabe des vorläufigen Bescheids",w:"Die Bekanntgabe ist für § 171 Abs. 8 AO ohne Bedeutung."},
+{a:"An die Aufhebung des Vorläufigkeitsvermerks",w:"Die Aufhebung ist Folge, nicht Auslöser der Hemmung."}],c:1,
+e:"BFH vom 26.08.1992, II R 107/90. Ein Jahr in den Fällen des § 165 Abs. 1 Satz 1 AO, zwei Jahre in den Fällen des Satzes 2."},
+
+{t:"Ablaufhemmung",q:"Löst der Vorbehalt der Nachprüfung eine Ablaufhemmung aus?",o:[
+{a:"Ja, nach § 171 Abs. 8 AO",w:"§ 171 Abs. 8 AO betrifft ausschließlich die Vorläufigkeit nach § 165 AO."},
+{a:"Nein, § 164 AO taucht in § 171 AO nicht auf",w:""},
+{a:"Ja, nach § 171 Abs. 4 AO",w:"Abs. 4 betrifft die Außenprüfung."},
+{a:"Ja, für zwei Jahre",w:"Eine solche Hemmung sieht das Gesetz für den Vorbehalt nicht vor."}],c:1,
+e:"Häufige Verwechslung: Der Vorbehalt entfällt nach § 164 Abs. 4 AO mit Ablauf der Festsetzungsfrist, er verlängert sie nicht."},
+
+{t:"Ablaufhemmung",q:"Innerhalb welcher Frist ist der Folgebescheid nach § 171 Abs. 10 Satz 1 AO anzupassen?",o:[
+{a:"Ein Jahr ab Bekanntgabe des Grundlagenbescheids",w:"Die Frist beträgt zwei Jahre, nicht ein Jahr."},
+{a:"Zwei Jahre ab Bekanntgabe des Grundlagenbescheids an den Steuerpflichtigen",w:""},
+{a:"Zwei Jahre ab interner Mitteilung an das Folgefinanzamt",w:"Die interne Mitteilung ist ausdrücklich unerheblich."},
+{a:"Zwei Jahre ab Unanfechtbarkeit des Grundlagenbescheids",w:"Auf die Unanfechtbarkeit kommt es nicht an, sondern auf die Bekanntgabe."}],c:1,
+e:"Der sachliche Umfang entspricht der Bindungswirkung des Grundlagenbescheids, etwa aus § 182 Abs. 1 AO."},
+
+{t:"Ablaufhemmung",q:"Welche zusätzliche Bedingung enthält § 171 Abs. 10a AO?",o:[
+{a:"Die Daten müssen vom Steuerpflichtigen stammen",w:"§ 93c AO betrifft gerade Daten mitteilungspflichtiger Stellen, also Dritter."},
+{a:"Die Daten müssen innerhalb von sieben Jahren nach dem Besteuerungszeitraum eingegangen sein",w:""},
+{a:"Der Steuerpflichtige muss zugestimmt haben",w:"Eine Zustimmung ist keine Voraussetzung der Ablaufhemmung."},
+{a:"Es muss eine Außenprüfung stattgefunden haben",w:"Mit der Außenprüfung hat § 171 Abs. 10a AO nichts zu tun."}],c:1,
+e:"Die sieben Jahre setzen sich aus vier Jahren regulärer Frist und drei Jahren maximaler Anlaufhemmung zusammen."},
+
+{t:"Ablaufhemmung",q:"Was setzt die Ablaufhemmung nach § 171 Abs. 14 AO voraus?",o:[
+{a:"Eine noch laufende Festsetzungsfrist für eine andere Steuerart",w:"Maßgeblich ist die Zahlungsverjährung eines Erstattungsanspruchs, nicht eine andere Festsetzungsfrist."},
+{a:"Einen mit dem Steueranspruch zusammenhängenden Erstattungsanspruch, dessen Zahlungsverjährung noch nicht eingetreten ist",w:""},
+{a:"Einen Antrag des Steuerpflichtigen",w:"Anträge fallen unter § 171 Abs. 3 AO."},
+{a:"Die Einleitung eines Steuerstrafverfahrens",w:"Das betrifft § 171 Abs. 5 und 7 AO."}],c:1,
+e:"Die Hemmung reicht zeitlich bis zum Eintritt der Zahlungsverjährung für den Erstattungsanspruch nach § 37 Abs. 2 AO, sachlich soweit dieser besteht."},
+
+{t:"Feststellung",q:"Welche Funktion hat § 181 Abs. 5 AO?",o:[
+{a:"Er ist eine eigenständige Änderungsvorschrift für Feststellungsbescheide",w:"BFH vom 02.03.2011, IX B 88/10: Er ist gerade keine eigenständige Änderungsvorschrift, sondern setzt eine solche zusätzlich voraus."},
+{a:"Er ist die spiegelbildliche Vorschrift zu § 171 Abs. 10 AO",w:""},
+{a:"Er regelt den Beginn der Feststellungsverjährung",w:"Der Beginn folgt aus § 181 Abs. 1 Satz 1 AO in Verbindung mit § 170 AO."},
+{a:"Er verlängert die Feststellungsfrist pauschal um zwei Jahre",w:"Eine pauschale Verlängerung enthält die Norm nicht."}],c:1,
+e:"Der Feststellungsbescheid kann noch ergehen, solange die Festsetzungsfrist für einen Folgebescheid noch nicht abgelaufen ist."},
+
+{t:"Feststellung",q:"Welche Folge hat ein fehlender Hinweis nach § 181 Abs. 5 Satz 2 AO?",o:[
+{a:"Der Feststellungsbescheid ist nichtig",w:"Nichtigkeit tritt nicht ein; der Bescheid ist rechtswidrig und anfechtbar."},
+{a:"Der Feststellungsbescheid ist rechtswidrig und auf Rechtsbehelf hin aufzuheben",w:""},
+{a:"Der Hinweis kann durch Ergänzungsbescheid nachgeholt werden",w:"BFH vom 18.03.1998, II R 45/96: Eine Nachholung im Wege des Ergänzungsbescheids ist nicht möglich."},
+{a:"Der Fehler ist nach § 126 AO heilbar",w:"§§ 126, 127 AO greifen nicht, weil der Fehler zugleich ein materieller Mangel mit Erlöschenswirkung ist."}],c:1,
+e:"Der Hinweis muss aussagen, dass der Bescheid nach Ablauf der Feststellungsfrist ergangen ist und nur für noch nicht verjährte Folgesteuern Bedeutung hat."},
+
+{t:"Feststellung",q:"Darf der Hinweis nach § 181 Abs. 5 Satz 2 AO konkrete Verjährungsdaten für den Folgebescheid enthalten?",o:[
+{a:"Ja, das erhöht die Bestimmtheit",w:"BFH vom 15.07.2021, II R 38/19: Eine konkrete Zeitangabe darf gerade nicht enthalten sein."},
+{a:"Nein, Feststellungen zur Festsetzungsverjährung sind nur im Folgebescheid zu treffen",w:""},
+{a:"Ja, wenn der Steuerpflichtige es beantragt",w:"Ein Antragsrecht besteht insoweit nicht."},
+{a:"Nur bei mehreren Feststellungsbeteiligten",w:"Die Zahl der Beteiligten ändert daran nichts."}],c:1,
+e:"Erforderlich und ausreichend ist der Hinweis, dass die Feststellung für noch nicht verjährte Folgebescheide von Bedeutung ist."}
+,
+{t:"Dauer § 169",q:"Wie lang ist die Festsetzungsfrist bei Verbrauchsteuern und Verbrauchsteuervergütungen?",o:[
+{a:"Ein Jahr",w:""},
+{a:"Vier Jahre",w:"Vier Jahre gelten nach § 169 Abs. 2 Satz 1 Nr. 2 AO für alle übrigen Steuern."},
+{a:"Zwei Jahre",w:"Eine zweijährige Festsetzungsfrist kennt § 169 Abs. 2 AO nicht."},
+{a:"Sechs Monate",w:"Eine Frist von sechs Monaten ist in § 169 AO nicht vorgesehen."}],c:0,
+e:"§ 169 Abs. 2 Satz 1 Nr. 1 AO. Für diese Steuern gilt zugleich häufig die Grundregel des § 170 Abs. 1 AO."},
+
+{t:"Dauer § 169",q:"Auf welchen Zeitraum verlängert sich die Frist bei leichtfertiger Steuerverkürzung?",o:[
+{a:"Auf sechs Jahre",w:"Sechs Jahre sieht § 169 Abs. 2 Satz 2 AO nicht vor."},
+{a:"Auf fünf Jahre",w:""},
+{a:"Auf zehn Jahre",w:"Zehn Jahre gelten nur bei Steuerhinterziehung."},
+{a:"Sie bleibt bei vier Jahren",w:"§ 169 Abs. 2 Satz 2 AO verlängert die Frist gerade in diesen Fällen."}],c:1,
+e:"Zehn Jahre bei Steuerhinterziehung, fünf Jahre bei leichtfertiger Steuerverkürzung."},
+
+{t:"Dauer § 169",q:"Die Frist wurde wegen Hinterziehung auf zehn Jahre verlängert. Gilt das für die gesamte Steuerfestsetzung?",o:[
+{a:"Ja, die ganze Festsetzung ist zehn Jahre offen",w:"Die Verlängerung reicht nur so weit, wie die Steuer hinterzogen oder verkürzt wurde."},
+{a:"Nein, nur soweit die Steuer hinterzogen wurde",w:""},
+{a:"Ja, und zusätzlich für alle Folgejahre",w:"Andere Veranlagungszeiträume werden davon nicht erfasst."},
+{a:"Nur wenn eine Außenprüfung stattgefunden hat",w:"Eine Außenprüfung ist keine Voraussetzung der verlängerten Frist."}],c:1,
+e:"Der Wortlaut des § 169 Abs. 2 Satz 2 AO stellt auf die hinterzogene beziehungsweise verkürzte Steuer ab."},
+
+{t:"Fristwahrung",q:"Was gilt, wenn der Bescheid die Behörde rechtzeitig verlässt, dem Empfänger aber nicht zugeht?",o:[
+{a:"Die Frist ist gewahrt",w:"§ 169 Abs. 1 Satz 3 Nr. 1 AO setzt zusätzlich voraus, dass der Bescheid dem Empfänger auch zugeht."},
+{a:"Die Frist ist nicht gewahrt, weil der Zugang fehlt",w:""},
+{a:"Der Bescheid gilt nach vier Tagen als zugegangen",w:"Die Zugangsfiktion greift nicht, wenn der Bescheid den Empfänger tatsächlich nicht erreicht."},
+{a:"Die Frist verlängert sich um ein Jahr",w:"Eine solche Verlängerung sieht das Gesetz nicht vor."}],c:1,
+e:"Der Bescheid muss den Bereich der Behörde verlassen haben und dem Empfänger tatsächlich zugehen — nur dann rechnet die Norm auf den früheren Zeitpunkt zurück."},
+
+{t:"Grundlagen",q:"Gilt für die Feststellungsverjährung dasselbe wie für die Festsetzungsverjährung?",o:[
+{a:"Nein, sie ist völlig eigenständig geregelt",w:"§ 181 Abs. 1 Satz 1 AO ordnet die sinngemäße Geltung der Vorschriften über die Festsetzungsverjährung an."},
+{a:"Ja, über § 181 Abs. 1 Satz 1 AO grundsätzlich",w:""},
+{a:"Ja, aber nur für die Dauer der Frist",w:"Die Verweisung umfasst auch Beginn und Ablaufhemmungen."},
+{a:"Nein, für Feststellungsbescheide gibt es keine Verjährung",w:"Auch Feststellungsbescheide unterliegen der Verjährung."}],c:1,
+e:"Sonderregelungen enthalten etwa § 181 Abs. 3 AO für Grundsteuerwerte und § 181 Abs. 5 AO für die Ablaufhemmung."},
+
+{t:"Ablaufhemmung",q:"Mehrere Ablaufhemmungen greifen gleichzeitig. Wie gehst du vor?",o:[
+{a:"Die Zeiträume werden addiert",w:"Eine Addition sieht das Gesetz nicht vor; jede Hemmung wird eigenständig an das reguläre Ende angehängt."},
+{a:"Jede wird einzeln berechnet, maßgeblich ist der späteste Zeitpunkt",w:""},
+{a:"Es gilt die zuerst eingetretene Hemmung",w:"Maßgeblich ist nicht die zeitliche Reihenfolge des Eintritts, sondern das späteste Ende."},
+{a:"Es gilt immer § 171 Abs. 4 AO vorrangig",w:"Eine Rangfolge zwischen den Ablaufhemmungen kennt § 171 AO nicht."}],c:1,
+e:"Klausurtipp: Alle einschlägigen Tatbestände prüfen und jeweils Voraussetzungen, zeitlichen und sachlichen Umfang darstellen."}
+];
+
+const SCHLUESSEL = "ao_teil16_verjaehrung_v1";
+const Speicher = (() => {
+  let puffer = null;
+  function lesen(){
+    if (puffer) return puffer;
+    try {
+      const roh = window.localStorage.getItem(SCHLUESSEL);
+      puffer = roh ? JSON.parse(roh) : {};
+    } catch (e) { puffer = {}; }
+    if (!puffer.fehler) puffer.fehler = [];
+    if (!puffer.gemeistert) puffer.gemeistert = [];
+    return puffer;
+  }
+  function schreiben(){
+    try { window.localStorage.setItem(SCHLUESSEL, JSON.stringify(puffer)); } catch (e) {}
+  }
+  return { lesen, schreiben };
+})();
+
+const THEMEN = [...new Set(FRAGEN.map(f => f.t))];
+let gewaehlteThemen = new Set(THEMEN);
+let modus = "alle";
+let runde = [], index = 0, treffer = 0, beantwortet = false;
+let rundenFehler = [], themenStand = {};
+
+const $ = id => document.getElementById(id);
+const mischen = arr => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+};
+const kennung = f => f.t + "|" + f.q.slice(0, 60);
+
+const MODI = [
+  { id:"alle", text:"Alle Fragen" },
+  { id:"offen", text:"Noch nicht gekonnt" },
+  { id:"fehler", text:"Fehlerheft" }
+];
+
+function reglerZeichnen(){
+  $("modusZeile").innerHTML = "";
+  MODI.forEach(m => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = m.text;
+    b.setAttribute("aria-pressed", modus === m.id);
+    b.onclick = () => { modus = m.id; reglerZeichnen(); bestandZeigen(); };
+    $("modusZeile").appendChild(b);
+  });
+  $("themenZeile").innerHTML = "";
+  const alle = document.createElement("button");
+  alle.className = "chip"; alle.textContent = "Alle Themen";
+  alle.setAttribute("aria-pressed", gewaehlteThemen.size === THEMEN.length);
+  alle.onclick = () => {
+    gewaehlteThemen = gewaehlteThemen.size === THEMEN.length ? new Set() : new Set(THEMEN);
+    reglerZeichnen(); bestandZeigen();
+  };
+  $("themenZeile").appendChild(alle);
+  THEMEN.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = t;
+    b.setAttribute("aria-pressed", gewaehlteThemen.has(t));
+    b.onclick = () => {
+      gewaehlteThemen.has(t) ? gewaehlteThemen.delete(t) : gewaehlteThemen.add(t);
+      reglerZeichnen(); bestandZeigen();
+    };
+    $("themenZeile").appendChild(b);
+  });
+}
+
+function auswahlBilden(){
+  const d = Speicher.lesen();
+  let pool = FRAGEN.filter(f => gewaehlteThemen.has(f.t));
+  if (modus === "offen") pool = pool.filter(f => !d.gemeistert.includes(kennung(f)));
+  if (modus === "fehler") pool = pool.filter(f => d.fehler.includes(kennung(f)));
+  return pool;
+}
+
+function bestandZeigen(){
+  const d = Speicher.lesen();
+  const n = auswahlBilden().length;
+  const teile = [n + (n === 1 ? " Frage ausgewählt" : " Fragen ausgewählt")];
+  if (d.fehler.length) teile.push(d.fehler.length + " im Fehlerheft");
+  if (d.gemeistert.length) teile.push(d.gemeistert.length + " von " + FRAGEN.length + " sicher gekonnt");
+  $("bestand").textContent = teile.join(", ") + ".";
+  $("starten").disabled = n === 0;
+  $("starten").style.opacity = n === 0 ? .45 : 1;
+}
+
+function starten(pool){
+  runde = mischen(pool); index = 0; treffer = 0; rundenFehler = []; themenStand = {};
+  $("regler").classList.add("verborgen");
+  $("ende").classList.add("verborgen");
+  $("lauf").classList.remove("verborgen");
+  frageZeichnen();
+}
+
+function frageZeichnen(){
+  beantwortet = false;
+  const f = runde[index];
+  $("position").textContent = "Frage " + (index+1) + " von " + runde.length;
+  $("trefferstand").textContent = treffer + " richtig";
+  $("balkenFuellung").style.width = (index / runde.length * 100) + "%";
+  $("thema").textContent = f.t;
+  $("frage").textContent = f.q;
+  $("aufloesung").classList.add("verborgen");
+  $("weiter").classList.add("verborgen");
+
+  const reihen = mischen(f.o.map((opt, i) => ({ text: opt.a, warum: opt.w, richtig: i === f.c })));
+  f._reihen = reihen;
+
+  const liste = $("optionen");
+  liste.innerHTML = "";
+  reihen.forEach((r, i) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.className = "option";
+    b.innerHTML = '<span class="buchstabe">' + "abcd"[i] + ')</span>';
+    b.appendChild(document.createTextNode(r.text));
+    b.onclick = () => antworten(i);
+    li.appendChild(b); liste.appendChild(li);
+  });
+}
+
+function antworten(i){
+  if (beantwortet) return;
+  beantwortet = true;
+  const f = runde[index], reihen = f._reihen;
+  const richtig = reihen[i].richtig;
+  const d = Speicher.lesen(), k = kennung(f);
+
+  const knoepfe = [...document.querySelectorAll(".option")];
+  knoepfe.forEach((b, j) => {
+    b.disabled = true;
+    if (reihen[j].richtig) b.classList.add(j === i && richtig ? "gewaehlt-richtig" : "loesung");
+    else if (j === i) b.classList.add("gewaehlt-falsch");
+    else b.classList.add("matt");
+  });
+
+  if (!themenStand[f.t]) themenStand[f.t] = { r:0, n:0 };
+  themenStand[f.t].n++;
+
+  if (richtig) {
+    treffer++; themenStand[f.t].r++;
+    d.fehler = d.fehler.filter(x => x !== k);
+    if (!d.gemeistert.includes(k)) d.gemeistert.push(k);
+  } else {
+    rundenFehler.push(f);
+    if (!d.fehler.includes(k)) d.fehler.push(k);
+    d.gemeistert = d.gemeistert.filter(x => x !== k);
+  }
+  Speicher.schreiben();
+
+  const a = $("aufloesung");
+  a.classList.remove("verborgen", "ja", "nein");
+  a.classList.add(richtig ? "ja" : "nein");
+  $("urteil").textContent = richtig ? "Richtig." : "Das trifft es nicht.";
+
+  if (richtig) {
+    $("warumBlock").classList.add("verborgen");
+    $("richtigBlock").classList.add("verborgen");
+  } else {
+    $("warum").textContent = reihen[i].warum;
+    $("warumBlock").classList.remove("verborgen");
+    const loesung = reihen.find(r => r.richtig);
+    $("richtigText").textContent = loesung.text;
+    $("richtigBlock").classList.remove("verborgen");
+  }
+  $("erlaeuterung").textContent = f.e;
+  $("trefferstand").textContent = treffer + " richtig";
+  $("weiter").classList.remove("verborgen");
+  $("weiter").textContent = index + 1 < runde.length ? "Weiter" : "Runde auswerten";
+  $("weiter").focus();
+}
+
+function weiter(){
+  if (!beantwortet) return;
+  index++;
+  if (index < runde.length) frageZeichnen(); else auswerten();
+}
+
+function auswerten(){
+  $("lauf").classList.add("verborgen");
+  $("ende").classList.remove("verborgen");
+  const q = runde.length ? Math.round(treffer / runde.length * 100) : 0;
+  $("quote").textContent = q + " %";
+  $("bilanz").textContent = treffer + " von " + runde.length + " Fragen richtig beantwortet.";
+  const liste = $("themenBilanz"); liste.innerHTML = "";
+  Object.keys(themenStand)
+    .sort((a,b) => (themenStand[a].r/themenStand[a].n) - (themenStand[b].r/themenStand[b].n))
+    .forEach(t => {
+      const s = themenStand[t];
+      const li = document.createElement("li");
+      if (s.r / s.n < .7) li.className = "schwach";
+      li.innerHTML = "<span>" + t + "</span><span class='wert'>" + s.r + " von " + s.n + "</span>";
+      liste.appendChild(li);
+    });
+  $("fehlerRunde").classList.toggle("verborgen", rundenFehler.length === 0);
+  $("fehlerRunde").textContent = "Die " + rundenFehler.length + " Fehler wiederholen";
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+function zurueckZumMenue(){
+  $("lauf").classList.add("verborgen");
+  $("ende").classList.add("verborgen");
+  $("regler").classList.remove("verborgen");
+  bestandZeigen();
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+$("starten").onclick = () => starten(auswahlBilden());
+$("weiter").onclick = weiter;
+$("abbrechen").onclick = zurueckZumMenue;
+$("nochmal").onclick = zurueckZumMenue;
+$("fehlerRunde").onclick = () => { if (rundenFehler.length) starten(rundenFehler); };
+$("zuruecksetzen").onclick = () => {
+  const d = Speicher.lesen();
+  d.fehler = []; d.gemeistert = [];
+  Speicher.schreiben(); bestandZeigen();
+};
+
+document.addEventListener("keydown", e => {
+  if ($("lauf").classList.contains("verborgen")) return;
+  if (e.key >= "1" && e.key <= "4") {
+    const b = document.querySelectorAll(".option")[+e.key - 1];
+    if (b && !b.disabled) b.click();
+  }
+  if (e.key === "Enter" && beantwortet) { e.preventDefault(); weiter(); }
+});
+
+reglerZeichnen();
+bestandZeigen();
+$("unterzeile").textContent = FRAGEN.length + " Fragen zu Teil 16 des Vorkurs-Skripts";
+</script>
+</body>
+</html>
